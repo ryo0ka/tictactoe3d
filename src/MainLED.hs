@@ -54,17 +54,6 @@ module MainLED where
 		e <- digpin INPUT 13
 		return (m, e)
 
-	-- :LOOP
-	-- If the move button is pressed
-	--   While the coord is occupied
-	--     Move to the next coord
-	-- If the confirm button is pressed
-	--   Check the condition
-	--   If the player wins
-	--     End the game
-	--   Else
-	--     Goto LOOP
-
 	data Game = Game Token T3Cube
 	type Display = Cube Tril
 
