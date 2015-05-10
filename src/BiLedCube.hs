@@ -20,14 +20,14 @@ module BiLedCube where
 	allPos2 = let t2 [x, y] = (x, y)
 	          in t2 <$> replicateM 2 allEnum
 
-	drawBoard :: BiLedCube -> (Pos2 -> Tril) -> Pos -> Arduino ()
-	drawBoard (BiLedCube gs b) t p = do
+	drawBoard :: BiLedCube -> Pos -> (Pos3 -> Tril) -> Arduino ()
+	drawBoard (BiLedCube gs b) p t = do
 		sequence_ $ do
 			p' <- allPos
 			return $ digitalWrite (gs ! p') (p' /= p)
 		sequence_ $ do
 			(y, z) <- allPos2
-			return $ biLedWrite (b ! y ! z) $ t (y, z)
+			return $ biLedWrite (b ! y ! z) $ t (p, y, z)
 
 {-
 	runBoard :: () -> LedBoard -> Arduino ()

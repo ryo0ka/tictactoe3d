@@ -54,63 +54,95 @@ module MainLED where
 		e <- digpin INPUT 13
 		return (m, e)
 
-	data Game = Game Token T3Cube
+	data Game = Game { token :: Token, cube :: T3Cube }
 	type Display = Cube Tril
-
-	getSit :: Display -> Pos -> Pos2 -> Tril
-	getSit c x (y, z) = c ! (x, y, z)
 
 	newGame :: Game
 	newGame = Game True (init Nothing)
 
 	main :: Arduino ()
 	main = do
-		d <- initLedCube
+		c <- initLedCube
 		(m, e) <- initButtons
 
 		liftIO $ do
 			let nwd :: Frameworks t => Moment t ()
 			    nwd = do
+					-- drawing each layer every 0.05 seconds:
+					  -- make an event stream like [(0, ?), (0.05, ?), (0.10, ?), ...]
+					  -- make a behavior of Pos
+					  -- make a behavior of Cube Tril
+					  -- for each item in the event stream, 
+					    -- draw a layer of the Pos behavior 
+					    -- inremenet the Pos behavior's value
+					eLotation :: Event t Int -- whatever type
+					eLocation = undefined
+
+					bCurrentPos :: Behavior t Pos
+					bCurrentPos = let
+						inc :: Pos -> Pos
+						inc P1 = P2
+						inc P2 = P3
+						inc P3 = P1
+						draw :: Pos -> Behavior t Arduino () -- how to apply this?
+						draw p = drawBoard c p <$> bDisplay
+					in (\p _ -> inc p) <$> pure P1 <*> eLotation
+
+					bDisplay :: Behavior t (Pos3 -> Tril)
+					bDisplay = (!) <$> pure $ init Nothing
+
+					-- treating a long push of a button as one input:
+					  -- make an event stream of Bool (the button's state)
+					  -- make a behavior of Bool (flag)
+					  -- for each iterm in the event stream,
+					    -- if it's True and the flag is False,
+					      -- release True
+					      -- switch the flag to True
+					    -- otherwise,
+					      -- switch the flag to False
+					eButton :: Event t Bool -> Event t Bool
+					eButton raw = 
+						let
+							bFlag :: Behavior t Bool
+							bFlag = pure False
+						in filterE (True ==) undefined -- how?
+
+					-- moving a pivot every time the move button is pressed:
+					  -- make an event stream of the button's input
+					  -- make a behavior of Pos3
+					  -- make a behavior of T3Cube
+					  -- for each item in the event stream,
+					    -- if it's True,
+					      -- until the pos is available,
+					        -- increment the Pos3 behavior's value
+					      -- update the cube behavior's value
+					eMoveInput :: Event t Bool
+					eMoveInput = eButton undefined
+
+					bPivot :: Behavior t Pos3
+					bPivot =
+						let
+							inc' :: Pos3 -> Pos3
+							inc' = undefined -- how?
+							inc :: Pos3 -> Pos3
+							inc p = case cube <$> bGame
+						in (\p _ -> inc p) <$> pure (P1, P2, P3) <*> eMoveInput
+
+					bGame :: Behavior t Game
+					bGame = pure newGame
+
+					-- applying a user input when he presses the end button:
+					  -- make an event stream of the button's input
+					  -- make a behavior of Pos3
+					  -- make a behavior of Game
+					  -- for each item in the event stream,
+					    -- if it's True,
+					      -- if he wins,
+					      	-- end the game
+					      -- otherwise,
+					        -- update the Game behavior's value
+
 					return ()
 
 			nw <- compile nwd
 			actuate nw
-
-	-- how to draw each layer every 0.05 seconds?
-	  -- make an event stream like [(0, ?), (0.05, ?), (0.10, ?), ...]
-	  -- make a behavior of Pos
-	  -- make a behavior of T3Cube
-	  -- for each item in the event stream, 
-	    -- draw a layer of the Pos behavior 
-	    -- inremenet the Pos behavior's value
-
-	-- how to recognize a long push of a button as one input?
-	  -- make an event stream of Bool (the button's state)
-	  -- make a behavior of Bool (flag)
-	  -- for each iterm in the event stream,
-	    -- if it's True and the flag is False,
-	      -- release True
-	      -- switch the flag to True
-	    -- otherwise,
-	      -- switch the flag to False
-
-	-- how to move a pivot every time the move button is pressed?
-	  -- make an event stream of the button's input
-	  -- make a behavior of Pos3
-	  -- make a behavior of Cube Tril
-	  -- for each item in the event stream,
-	    -- if it's True,
-	      -- until the pos is available,
-	        -- increment the Pos3 behavior's value
-	      -- update the cube behavior's value
-
-	-- how to apply a user input when he presses the end button?
-	  -- make an event stream of the button's input
-	  -- make a behavior of Pos3
-	  -- make a behavior of Game
-	  -- for each item in the event stream,
-	    -- if it's True,
-	      -- if he wins,
-	      	-- end the game
-	      -- otherwise,
-	        -- update the Game behavior's value

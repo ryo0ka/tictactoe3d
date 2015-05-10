@@ -1,0 +1,13 @@
+4/14
+	Found my laptop not capable of Mega.
+		FTDI is not working or whatever reason.
+
+4/16
+	Found my desktop capable of Mega.
+	Found all digital pins working on Mega.
+		FTDI was preinstalled.
+		Tested a simple Serial program.
+		Uploaded the Standard Firmata.
+		Tested all pins through Haskell.
+
+	Decided to use Uno in class room, and Mega otherwise.
