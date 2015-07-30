@@ -1,5 +1,4 @@
 module BiLed where
-
 	import System.Hardware.Arduino
 
 	data BiLed = BiLed Pin Pin
@@ -14,8 +13,6 @@ module BiLed where
 		digitalWrite p False
 		digitalWrite q False
 
-	type Tril = Maybe Bool
-
-	biLedWrite :: BiLed -> Tril -> Arduino ()
+	biLedWrite :: BiLed -> Maybe Bool -> Arduino ()
 	biLedWrite pq Nothing  = biLedOff pq
 	biLedWrite pq (Just b) = biLedOn  pq b

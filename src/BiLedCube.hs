@@ -1,81 +1,57 @@
-module BiLedCube where
-
+module BiLedCube (
+	Cube(..),
+	Lyr(..),
+	succLayer,
+	drawLayer,
+	drawCube,
+) where
+	import Control.Monad
 	import Data.Functor
-	import Control.Monad (replicateM, sequence_)
-	import Data.EnumMap.Lazy ((!))
-	import qualified Data.EnumMap.Lazy as E
-	import qualified Data.List as L
+	import Data.Traversable
+	import Data.Foldable as F
+	import Data.List
 	import Data.Tuple.Homogenous
 	import System.Hardware.Arduino
-	import Util (allEnum)
 	import BiLed
-	import Cube hiding ((!))
+	import Util
 
-	type BiLedBoard = Dim2 E.EnumMap Pos BiLed
-	type Grounds = E.EnumMap Pos Pin
-	data BiLedCube = BiLedCube Grounds BiLedBoard
-	type Pos2 = (Pos, Pos)
+	type Grounds = Tuple3 Pin
+	type Layer = Tuple9 BiLed
+	data Cube = Cube Grounds Layer
 
-	allPos2 :: [Pos2]
-	allPos2 = let t2 [x, y] = (x, y)
-	          in t2 <$> replicateM 2 allEnum
+	drawLayer :: Layer -> ((Int, Int) -> Maybe Bool) -> Arduino ()
+	drawLayer ls f = F.sequence_ $ do
+		(yz, l) <- indexed ls
+		let	(y:z:_) = succ <$> base 2 yz
+		return $ biLedWrite l $ f (y, z)
 
-	drawBoard :: BiLedCube -> Pos -> (Pos3 -> Tril) -> Arduino ()
-	drawBoard (BiLedCube gs b) p t = do
-		sequence_ $ do
-			p' <- allPos
-			return $ digitalWrite (gs ! p') (p' /= p)
-		sequence_ $ do
-			(y, z) <- allPos2
-			return $ biLedWrite (b ! y ! z) $ t (p, y, z)
+	data Lyr = LA | LB | LC deriving (Eq, Enum, Bounded)
 
+	succLayer :: Lyr -> Lyr
+	succLayer LC = LA
+	succLayer l = succ l
+
+	parGnds :: Grounds -> Lyr -> ((Int, Pin), [(Int, Pin)])
+	parGnds gnds lyr = 
+		headFst $ partition match $ indexed $ toList gnds where
+			headFst ([x], xs) = (x, xs)
+			match (i, _) = fromEnum lyr == i
+
+	drawCube :: Cube -> Lyr -> ((Int, Int, Int) -> Maybe Bool) -> Arduino ()
+	drawCube (Cube gs ls) i f = do
+		let ((x, g), rgs) = parGnds gs i
+		F.sequence_ $ do
+			(_, rg) <- rgs
+			return $ digitalWrite rg True
+		digitalWrite g False
+		drawLayer ls $ (\(y, z) -> f (x, y, z))
 {-
-	runBoard :: () -> LedBoard -> Arduino ()
-	runBoard ol nl =
-		let get' (x, y) l = l E.! x E.! y
-		    get p = (get' p ol, get' p nl)
-		    write (o, n) = biLedWrite n o
-		in mapM_ write $ get <$> allPos2
-
-	type Ground = E.EnumMap Pos Pin
-
-	runGround :: Ground -> Arduino ()
-	runGround c = mapM_ f allEnum where
-		f :: Pos -> Arduino ()
-		f p = mapM_ g (E.assocs c) where
-			g :: (Pos, Pin) -> Arduino ()
-			g (p', n) = digitalWrite n (p /= p')
--}
-
-{-
-	type BiLedCube = Cube BiLedOut
-	type BiLedCubeGnd = E.EnumMap Pos Pin
-
-	--biled :: Maybe Bool -> Location -> BiLedCube -> Arduino ()
-	--biled t l c = biLedWrite (getW l c) t
-
-	runGnds :: BiLedCubeGnd -> Arduino ()
-	runGnds c = mapM_ f allEnum where
-		f pos = mapM_ f' (E.assocs c) where
-			f' (pos', pin) = digitalWrite pin (pos == pos')
+一列目から三列目まで走査するうち
+現時点の列の凹を消灯し凸を走査し凹を点灯する
+開始前後を考えから除けば自然
 -}
 {-
-	type BiLeds = Dim2 E.EnumMap Position BiLedOut
-	type BiLedCube = E.EnumMap Position (Pin, BiLeds)
-
-	layerAt :: BiLedCube -> Vertical -> BiLeds
-	layerAt c v = c E.! v
-
-	gndAt :: BiLedCube -> Vertical -> Pin
-	gndAt c v = fst(layerAt c v)
-
-	outAt :: BiLedCube -> Vertical -> Horizon -> BiLedOut
-	outAt c v h = snd(layerAt c v) E.! h
-
-	-- Runs through all the ground pins once.
-	-- Execute every 10 milliseconds or shorter.
-	runGnds :: BiLedCube -> Arduino()
-	runGnds c = mapM_ f [minBound ..] where
-		f v = mapM_ g (E.assocs c) where
-			g (w, (p, _)) = digitalWrite p $ v == w
+凸型出力を値に持つ二層の線型構造体と凹型出力の組を線型構造体に収める
+全ての線型構造体にVectorを用いる
+全ての線型構造体の辺長は3とする
 -}

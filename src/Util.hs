@@ -1,39 +1,31 @@
 module Util where
-
+	import Control.Monad
+	import Control.Monad.State as S
+	import Control.Applicative
+	import Data.Functor
 	import Data.Maybe
-	import Data.List (find)
+	import Data.List
+	import Data.Traversable
 
-	sift :: (a -> Bool) -> a -> Maybe a
-	sift f a = if f a then Just a else Nothing
+	-- | if given bool is true, wraps another arg with Just, otherwise Nothing
+	thenJust :: Bool -> a -> Maybe a
+	thenJust b n = if b then Just n else Nothing
 
-	merge :: [a] -> [a] -> [a]
-	merge xs     []     = xs
-	merge []     ys     = ys
-	merge (x:xs) (y:ys) = x : y : merge xs ys
-
-	headMaybe :: [a] -> Maybe a
-	headMaybe [] = Nothing
-	headMaybe (x:_) = Just x
-
-	headOr :: a -> [a] -> a
-	headOr def list = fromMaybe def $ listToMaybe list
-
-	catMaybes2 :: [Maybe a] -> [a]
-	catMaybes2 ms = map fromJust $ takeWhile isJust ms
-
-	_toEnumS :: (Enum a) => a -> a -> Int -> Maybe a
-	_toEnumS min max i = let
-		min' = fromEnum min
-		max' = fromEnum max
-		in if min' <= i && i <= max'
-			then Just (toEnum i) 
-			else Nothing
-
-	toEnumS :: (Enum a, Bounded a) => Int -> Maybe a
-	toEnumS = _toEnumS minBound maxBound
-
-	allEnum :: (Enum a, Bounded a) => [a]
-	allEnum = [minBound ..]
-
+	-- | retrieves the first found Just in the list, or Nothing if not found any
 	firstJust :: [Maybe a] -> Maybe a
-	firstJust xs = fromJust $ find isJust xs
+	firstJust ms = join $ find isJust ms
+
+	-- | base 2 10 == [0, 1, 0, 1]
+	base :: Int -> Int -> [Int]
+	base i n = unfoldr f n ++ repeat 0
+		where f b = (b /= 0) `thenJust` (b `mod` i, b `div` i)
+
+	-- | [A, B, C] -> [(0, A), (1, B), (2, C)]
+	indexed :: (Integral n, Traversable t) => t a -> t (n, a)
+	indexed t = evalState (traverse go t) 0 where
+		go a = flip (,) a <$> S.get <* modify succ
+
+	allEnum :: (Bounded a, Enum a) => [a]
+	allEnum = [minBound..maxBound]
+
+	
