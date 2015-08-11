@@ -1,31 +1,44 @@
+-- Defines general utilitiy functions
 module Util where
 	import Control.Monad
 	import Control.Monad.State as S
 	import Control.Applicative
 	import Data.Functor
+	import Data.Foldable as F
 	import Data.Maybe
 	import Data.List
 	import Data.Traversable
 
-	-- | if given bool is true, wraps another arg with Just, otherwise Nothing
+	-- True  `thenJust` 1 = Just 1
+	-- False `thenJust` 1 = Nothing
 	thenJust :: Bool -> a -> Maybe a
 	thenJust b n = if b then Just n else Nothing
 
-	-- | retrieves the first found Just in the list, or Nothing if not found any
-	firstJust :: [Maybe a] -> Maybe a
-	firstJust ms = join $ find isJust ms
+	-- (True  `thenDo` succ) 1 = 2
+	-- (False `thenDo` succ) 1 = 1
+	thenDo :: Bool -> (a -> a) -> (a -> a)
+	thenDo b f = if b then f else id
 
-	-- | base 2 10 == [0, 1, 0, 1]
+	-- firstJust [Nothing, Just 1 , Nothing] = Just 1
+	-- firstJust [Nothing, Nothing, Nothing] = Nothing
+	firstJust :: (Foldable f) => f (Maybe a) -> Maybe a
+	firstJust ms = join $ F.find isJust ms
+
+	-- base 2 10 = [0, 1, 0, 1]
 	base :: Int -> Int -> [Int]
-	base i n = unfoldr f n ++ repeat 0
-		where f b = (b /= 0) `thenJust` (b `mod` i, b `div` i)
+	base i n = unfoldr f n ++ repeat 0 where
+		f b = (b /= 0) `thenJust` pair b i where
+			pair n i = (n `mod` i, n `div` i)
 
-	-- | [A, B, C] -> [(0, A), (1, B), (2, C)]
-	indexed :: (Integral n, Traversable t) => t a -> t (n, a)
+	-- [A, B, C] -> [(0, A), (1, B), (2, C)]
+	indexed :: Traversable t => t a -> t (Int, a)
 	indexed t = evalState (traverse go t) 0 where
 		go a = flip (,) a <$> S.get <* modify succ
 
-	allEnum :: (Bounded a, Enum a) => [a]
-	allEnum = [minBound..maxBound]
-
-	
+	-- partitionI 2 [a, b, c, d] = Just (c, [a, b, d])
+	-- partitionI 5 [a, b, c, d] = Nothing
+	partitionI :: Int -> [a] -> Maybe (a, [a])
+	partitionI i ns = format $ partition (i ==+) (indexed ns) where
+		j ==+ k = j == fst k
+		format ([], _) = Nothing
+		format ([n], ns) = Just (snd n, snd <$> ns)
