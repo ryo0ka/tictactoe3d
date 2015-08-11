@@ -1,5 +1,5 @@
 -- Defines Tic-Tac-Toe game execution on an LED cube.
-module Exec where
+module Main where
 	import Control.Monad
 	import Control.Monad.IO.Class
 	import Data.Word
