@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                tictactoe3d
-version:             0.1.0.2
+version:             0.1.0.3
 synopsis:            3D Tic-Tac-Toe game
 description:         Defines 3D Tic-Tac-Toe game logic and state machines.
 homepage:            https://github.com/ryo0ka/tictactoe3d
