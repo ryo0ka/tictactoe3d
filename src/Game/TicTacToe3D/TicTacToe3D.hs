@@ -114,17 +114,18 @@ module Game.TicTacToe3D.TicTacToe3D (
 	initBoard i f = (,) i $ V.init i f
 
 	-- Represents a state of a tic-tac-toe game.
+	-- `Done` represents a game that has finished.
 	data Game = Game Board Team | Done Team [I3]
-
-	-- Retrieves True if the given game has finished, otherwise False.
-	done :: Game -> Bool
-	done (Done _ _) = True
-	done _ = False
 
 	-- An initialized state of a game.
 	newGame :: Game
 	newGame = Game newBoard True where
 		newBoard = (initBoard 3 $ const Nothing)
+
+	-- Retrieves True if the given game has finished, otherwise False.
+	done :: Game -> Bool
+	done (Done _ _) = True
+	done _ = False
 
 	-- Makes the current team play at the specified square.
 	playGame :: Int -> Game -> Game
