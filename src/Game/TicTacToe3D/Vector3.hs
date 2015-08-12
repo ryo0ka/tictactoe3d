@@ -1,8 +1,8 @@
 -- Defines a 3-layered Vector and relative utilties.
-module Vector3 where
+module Game.TicTacToe3D.Vector3 where
+	import Data.List (unfoldr)
 	import Data.Vector (Vector)
 	import qualified Data.Vector as V
-	import Util (base)
 
 	type Dim3 a b = a (a (a b))
 
@@ -11,6 +11,12 @@ module Vector3 where
 
 	-- Represents an index of a 3-layered vector.
 	type I3 = (Int, Int, Int)
+
+	-- base 2 10 = [0, 1, 0, 1]
+	base :: Int -> Int -> [Int]
+	base i n = unfoldr f n ++ repeat 0 where
+		f b = if b /= 0 then Just (pair b i) else Nothing where
+			pair n i = (n `mod` i, n `div` i)
 
 	-- i3  1 = (1, 0, 0)
 	-- i3 26 = (1, 1, 1)

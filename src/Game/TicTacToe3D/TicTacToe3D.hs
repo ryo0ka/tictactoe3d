@@ -1,5 +1,5 @@
 -- Defines a state machine of 3D Tic-Tac-Toe.
-module TicTacToe (
+module Game.TicTacToe3D.TicTacToe3D (
 	Team,
 	Issue,
 	Board,
@@ -16,8 +16,7 @@ module TicTacToe (
 	import Data.List
 	import Data.Foldable as F
 	import Data.Tuple.Homogenous
-	import Vector3 as V
-	import Util (base, thenJust, firstJust)
+	import Game.TicTacToe3D.Vector3 as V
 
 	-- [1, 2, 3, 4, 5] -> [(1, 5), (2, 4)]
 	collapse :: [a] -> [(a, a)]
@@ -60,7 +59,7 @@ module TicTacToe (
 		Tuple2 (fs, bs) <- explode crd
 		let	line = crd : pick fs ++ pick bs where
 				pick = takeWhile $ withinC 0 len
-		return $ (length line == len) `thenJust` line
+		return $ if length line == len then Just line else Nothing
 
 	-- Represents a team.
 	type Team = Bool
@@ -80,6 +79,11 @@ module TicTacToe (
 	foldI (x:xs) = F.foldr add x xs
 		where add m n = if m == n then m else Nothing
 		-- not Monoid; mappend mempty x /= x
+
+	-- firstJust [Nothing, Just 1 , Nothing] = Just 1
+	-- firstJust [Nothing, Nothing, Nothing] = Nothing
+	firstJust :: (Foldable f) => f (Maybe a) -> Maybe a
+	firstJust ms = join $ F.find isJust ms
 
 	-- Retrieves the winner and the owned line.
 	-- Nothing if the game has not ended yet.

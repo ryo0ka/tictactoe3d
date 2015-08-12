@@ -2,7 +2,5 @@ flags: {}
 packages:
 - '.'
 extra-deps:
-- 'hArduino-0.9'
-- 'serialport-0.4.7'
 - 'tuples-homogenous-h98-0.1.1.0'
 resolver: lts-2.22
