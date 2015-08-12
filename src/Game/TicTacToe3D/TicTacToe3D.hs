@@ -6,8 +6,7 @@ module Game.TicTacToe3D.TicTacToe3D (
 	Game (..),
 	done,
 	newGame,
-	playGame,
-	explode'
+	playGame
 ) where
 	import Control.Monad
 	import Data.Functor
